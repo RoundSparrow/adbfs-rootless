@@ -2,7 +2,8 @@
    @file
    @author  Calvin Tee (collectskin.com)
    @author  Sudarshan S. Chawathe (eip10.org)
-   @version 0.1
+   @author  Stephen A. Gutknecht
+   @version 0.1 MOD 0001
 
    @section License
 
@@ -103,6 +104,8 @@ queue<string> adb_push(const string&, const string&);
 queue<string> adb_pull(const string&, const string&);
 queue<string> adb_shell(const string&);
 queue<string> shell(const string&);
+// the adb -s parameter is for a specific device - to allow multiple USB cables or remote connections (WiFi, etc).
+string specificdevice = "-s 000333344444 ";
 
 string tempDirPath;
 map<string,fileCache> fileData;
@@ -147,7 +150,7 @@ queue<string> adb_shell(const string& command)
     string actual_command;
     actual_command.assign(command);
     //adb_shell_escape_command(actual_command);
-    actual_command.insert(0, "adb shell ");
+    actual_command.insert(0, "adb " + specificdevice + "shell ");
     return exec_command(actual_command);
 }
 
@@ -242,6 +245,7 @@ void adb_push_pull_cmd(string& cmd, const bool push,
 		       const string& local_path, const string& remote_path)
 {
     cmd.assign("adb ");
+    cmd.append(specificdevice);
     cmd.append((push ? "push '" : "pull '"));
     cmd.append((push ? local_path : remote_path));
     cmd.append("' '");

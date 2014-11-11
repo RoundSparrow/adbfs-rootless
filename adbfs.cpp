@@ -105,7 +105,8 @@ queue<string> adb_pull(const string&, const string&);
 queue<string> adb_shell(const string&);
 queue<string> shell(const string&);
 // the adb -s parameter is for a specific device - to allow multiple USB cables or remote connections (WiFi, etc).
-string specificdevice = "-s 000333344444 ";
+string specificdevice = "000333344444";
+string specificdeviceprefix = " -s ";
 
 string tempDirPath;
 map<string,fileCache> fileData;
@@ -150,7 +151,7 @@ queue<string> adb_shell(const string& command)
     string actual_command;
     actual_command.assign(command);
     //adb_shell_escape_command(actual_command);
-    actual_command.insert(0, "adb " + specificdevice + "shell ");
+    actual_command.insert(0, "adb" + specificdeviceprefix + specificdevice + " shell ");
     return exec_command(actual_command);
 }
 
@@ -244,8 +245,10 @@ void makeTmpDir(void) {
 void adb_push_pull_cmd(string& cmd, const bool push, 
 		       const string& local_path, const string& remote_path)
 {
-    cmd.assign("adb ");
+    cmd.assign("adb");
+    cmd.assign(specificdeviceprefix);
     cmd.append(specificdevice);
+    cmd.append(" ");
     cmd.append((push ? "push '" : "pull '"));
     cmd.append((push ? local_path : remote_path));
     cmd.append("' '");
@@ -928,6 +931,21 @@ int main(int argc, char *argv[])
     signal(SIGSEGV, handler);   // install our handler
     makeTmpDir();
     memset(&adbfs_oper, sizeof(adbfs_oper), 0);
+
+    // DISCLAIMER: I know little of Unux/Linux C++ shell command processing - or long ago forgot it. Excuse this if the style or appraoch is horrible.
+    // First argument is the command itself, 2nd is the mount point
+    if (argc > 2)
+    {
+        specificdevice = argv[2];
+        printf("specific device %s\n", argv[2]);
+        // hide the param from fuse
+        argc--;
+    }
+    else
+    {
+        specificdevice = "";
+        specificdeviceprefix = "";
+    };
     adbfs_oper.readdir= adb_readdir;
     adbfs_oper.getattr= adb_getattr;
     adbfs_oper.access= adb_access;
@@ -945,5 +963,6 @@ int main(int argc, char *argv[])
     adbfs_oper.unlink = adb_unlink;
     adbfs_oper.readlink = adb_readlink;
     adb_shell("ls");
-    return fuse_main(argc, argv, &adbfs_oper, NULL);
+    int fuseResult = fuse_main(argc, argv, &adbfs_oper, NULL);
+    printf("fuse_main returned %d\n", fuseResult);
 }
